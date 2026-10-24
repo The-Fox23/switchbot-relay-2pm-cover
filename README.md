@@ -4,23 +4,23 @@ A custom Home Assistant integration for controlling SwitchBot Relay Switch 2PM d
 
 ## Features
 
-- Automatically discovers all supported Relay Switch 2PM devices in the SwitchBot account
-- Automatically adds newly discovered supported devices while the integration is running
-- Open and close covers, set target position, and read position feedback
-- Sends the SwitchBot `pause` command for stopping movement
-- Adds per-channel sensors for voltage (V), electrical current (A), and power (W)
+- Automatically discovers supported Relay Switch 2PM devices in the SwitchBot account
+- Automatically adds newly discovered devices while the integration is running
+- Native cover control: open, close, set position, and stop
+- Cover icon uses a roller-shutter/window-shutter symbol
+- Four aggregate sensors per device: voltage, current, power, and daily energy
+- Combines current, power, and daily energy across both relay channels; voltage uses channel 1, falling back to channel 2
 - Polls device status and measurements together every 30 seconds
 - Stores the API token and secret in Home Assistant's config entry
 
-## Electrical sensors
+## Measurement sensors
 
-For each discovered Relay Switch 2PM, the integration creates six measurement sensors:
+- **Voltage (V):** uses the voltage reported for channel 1, falling back to channel 2 if channel 1 is absent. The channels share the same mains supply.
+- **Current (A):** sums the reported current from both channels. The API reports current in milliamps, which is converted to amps.
+- **Power (W):** sums the power from both channels.
+- **Daily energy (kWh):** sums `switch1UsedElectricity` and `switch2UsedElectricity`. The API documents these values in watt-minutes, converted to kWh by dividing by 60,000. This is daily consumption, not a lifetime cumulative counter.
 
-- Switch 1 voltage and Switch 2 voltage (V)
-- Switch 1 current and Switch 2 current (A)
-- Switch 1 power and Switch 2 power (W)
-
-The SwitchBot API reports current in milliamps; the integration converts it to amps for Home Assistant. Sensors use the same device-status response as the cover entity, so they do not create extra API requests per sensor. A sensor remains without a numeric value if the API omits its corresponding field.
+The sensors use the same status response as the cover, so they do not create extra API requests per sensor. If the API omits a field, the sensor returns no numeric value rather than inventing one.
 
 ## Position mapping
 
@@ -42,7 +42,7 @@ The SwitchBot API reports `position: 0` as fully open and `position: 100` as ful
 4. Install **SwitchBot Relay 2PM Cover**.
 5. Restart Home Assistant.
 6. Go to **Settings → Devices & services → Add integration** and search for **SwitchBot Relay 2PM Cover**.
-7. Enter your SwitchBot API token and secret. The integration discovers all supported Relay Switch 2PM devices in that account.
+7. Enter your SwitchBot API token and secret. The integration discovers supported devices in that account.
 
 Existing installations configured as individual device entries are still read using their saved credentials. If multiple old entries exist for the same account, duplicate API polling may occur.
 
@@ -52,4 +52,4 @@ Never commit API tokens or secrets to this repository. Enter credentials only in
 
 ## Development status
 
-Automatic discovery and electrical measurement sensors are implemented in code but still require practical verification in Home Assistant. Confirm that the device API returns the six measurement fields for your device and firmware. The integration uses the SwitchBot cloud API and is not a safety device.
+Aggregate electrical sensors and daily energy calculation are implemented in code but still require practical verification in Home Assistant. Confirm the device API returns the expected fields for your device and firmware. The integration uses the SwitchBot cloud API and is not a safety device.
