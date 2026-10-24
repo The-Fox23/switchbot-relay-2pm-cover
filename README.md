@@ -1,13 +1,14 @@
 # SwitchBot Relay 2PM Cover
 
-A custom Home Assistant integration for controlling a SwitchBot Relay Switch 2PM as a native cover (roller shutter) using the SwitchBot Open API.
+A custom Home Assistant integration for controlling SwitchBot Relay Switch 2PM devices as native covers using the SwitchBot Open API.
 
 ## Features
 
-- Open and close the cover
-- Set a target position
-- Read the position reported by SwitchBot
-- Select a supported Relay Switch device during setup
+- Automatically discovers all supported Relay Switch 2PM devices in the SwitchBot account
+- Automatically adds newly discovered supported devices while the integration is running
+- Open and close covers
+- Set a target position and read the position reported by SwitchBot
+- Send the SwitchBot `pause` command for stopping movement
 - Store the API token and secret in Home Assistant's config entry
 
 ## Position mapping
@@ -19,7 +20,7 @@ The SwitchBot API reports `position: 0` as fully open and `position: 100` as ful
 ## Requirements
 
 - A SwitchBot account and an API token/secret from the SwitchBot app
-- A SwitchBot Relay Switch 2PM configured for roller-shutter control and calibrated
+- SwitchBot Relay Switch 2PM device(s) configured for roller-shutter control and calibrated
 - Home Assistant with custom integrations support
 
 ## Installation via HACS
@@ -30,7 +31,9 @@ The SwitchBot API reports `position: 0` as fully open and `position: 100` as ful
 4. Install **SwitchBot Relay 2PM Cover**.
 5. Restart Home Assistant.
 6. Go to **Settings → Devices & services → Add integration** and search for **SwitchBot Relay 2PM Cover**.
-7. Enter your SwitchBot API token and secret, then select the device.
+7. Enter your SwitchBot API token and secret. The integration discovers all supported Relay Switch 2PM devices in that account.
+
+Existing installations that were configured as individual device entries are still read using their saved credentials. The updated discovery logic can add all supported devices from that account; duplicate entity unique IDs are based on the physical device ID.
 
 ## Security
 
@@ -38,4 +41,4 @@ Never commit API tokens or secrets to this repository. Enter credentials only in
 
 ## Development status
 
-Initial development scaffold. Test device selection, position reporting, and movement in your own installation before relying on it for everyday use. The integration sends commands through the SwitchBot cloud API; it is not a safety device.
+Automatic device discovery is implemented in the code but should be verified in Home Assistant with at least two supported devices, including adding a new device after setup. The integration sends commands through the SwitchBot cloud API; it is not a safety device.
