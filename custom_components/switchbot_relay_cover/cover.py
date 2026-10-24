@@ -78,21 +78,8 @@ class SwitchBotRelayCover(CoordinatorEntity[SwitchBotCoordinator], CoverEntity):
         await self.coordinator.async_request_refresh()
 
     async def async_stop_cover(self, **kwargs: Any) -> None:
-        """Try to stop movement by commanding the currently reported position."""
-        status = self.coordinator.data or {}
-        current_position = status.get("position")
-
-        # SwitchBot uses 0=open and 100=closed. Re-send that raw position
-        # as the target instead of relying on turnOff, which did not stop motion.
-        try:
-            target_position = max(0, min(100, int(current_position)))
-        except (TypeError, ValueError):
-            await self.coordinator.async_request_refresh()
-            return
-
-        await self.coordinator.api.set_position(
-            self.coordinator.device_id, target_position
-        )
+        """Pause cover movement using the SwitchBot pause command."""
+        await self.coordinator.api.pause(self.coordinator.device_id)
         await self.coordinator.async_request_refresh()
 
     async def async_set_cover_position(self, **kwargs: Any) -> None:
