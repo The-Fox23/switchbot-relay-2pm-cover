@@ -43,6 +43,7 @@ class SwitchBotRelayCover(CoordinatorEntity[SwitchBotCoordinator], CoverEntity):
 
     _attr_has_entity_name = True
     _attr_name = "Cover"
+    _attr_icon = "mdi:window-shutter"
     _attr_supported_features = (
         CoverEntityFeature.OPEN
         | CoverEntityFeature.CLOSE
