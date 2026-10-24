@@ -7,11 +7,9 @@ from typing import Any
 import voluptuous as vol
 
 from homeassistant.config_entries import ConfigFlow
-from homeassistant.const import CONF_NAME
-from homeassistant.core import HomeAssistant
-from homeassistant.helpers.aiohttp_client import async_get_clientsession
-from homeassistant.helpers.selector import SelectOptionDict, SelectSelector, SelectSelectorConfig
 from homeassistant.exceptions import HomeAssistantError
+from homeassistant.helpers.aiohttp_client import async_get_clientsession
+from homeassistant.helpers.selector import SelectSelector, SelectSelectorConfig
 
 from .api import SwitchBotApi
 from .const import (
@@ -25,6 +23,7 @@ from .const import (
 
 
 def _supported(device: dict[str, Any]) -> bool:
+    """Return whether the device is a Relay Switch 2PM."""
     device_type = str(device.get("deviceType", "")).lower()
     return any(item in device_type for item in SUPPORTED_DEVICE_TYPES)
 
@@ -75,7 +74,11 @@ class SwitchBotRelayCoverConfigFlow(ConfigFlow, domain=DOMAIN):
         if user_input is not None:
             selected_id = user_input[CONF_DEVICE_ID]
             device = next(
-                (item for item in self._devices if str(item.get("deviceId")) == selected_id),
+                (
+                    item
+                    for item in self._devices
+                    if str(item.get("deviceId")) == selected_id
+                ),
                 None,
             )
             if device is None:
@@ -83,10 +86,13 @@ class SwitchBotRelayCoverConfigFlow(ConfigFlow, domain=DOMAIN):
             return await self._create_entry(device)
 
         options = [
-            SelectOptionDict(
-                value=str(device.get("deviceId", "")),
-                label=f"{device.get('deviceName', 'SwitchBot device')} ({device.get('deviceType', 'Unknown type')})",
-            )
+            {
+                "value": str(device.get("deviceId", "")),
+                "label": (
+                    f"{device.get('deviceName', 'SwitchBot device')} "
+                    f"({device.get('deviceType', 'Unknown type')})"
+                ),
+            }
             for device in self._devices
         ]
         schema = vol.Schema(
