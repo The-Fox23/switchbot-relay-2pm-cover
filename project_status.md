@@ -2,15 +2,26 @@
 
 **Stand:** 24.10.2026  
 **Repository:** https://github.com/The-Fox23/switchbot-relay-2pm-cover  
-**Status:** Öffnen, Schließen und Positionsrückmeldung praktisch bestätigt; native `pause`-Stoppfunktion wartet auf Praxistest
+**Status:** Automatische Geräteerkennung implementiert; Praxistest der neuen Mehrgeräte-Logik und der nativen `pause`-Stoppfunktion steht aus.
 
 ## 1. Projektziel
 
-Eine eigene Home-Assistant-Integration für den **SwitchBot Relay Switch 2PM**, die das Gerät als native Cover-Entität für einen Rollladen bereitstellt.
+Eine eigene Home-Assistant-Integration für den **SwitchBot Relay Switch 2PM**, die ein oder mehrere Geräte als native Cover-Entitäten für Rollläden bereitstellt. Die Kommunikation erfolgt über die SwitchBot Cloud API.
 
-Die Integration soll unabhängig von der offiziellen SwitchBot-Integration funktionieren und über die SwitchBot Cloud API kommunizieren.
+## 2. Neue Änderung: automatische Geräteerkennung
 
-## 2. Bisherige Erkenntnisse und Tests
+Die Integration wurde von einer einzelnen Geräteauswahl auf eine kontobasierte Erkennung umgestellt:
+
+- Beim Einrichten werden alle unterstützten Relay Switch 2PM im SwitchBot-Konto gesucht.
+- Für jedes gefundene Gerät wird eine eigene Cover-Entität erstellt.
+- Die Geräteliste wird zusammen mit den Statusdaten regelmäßig aktualisiert (alle 30 Sekunden).
+- Taucht später ein weiteres unterstütztes Gerät im Konto auf, wird es bei einer erfolgreichen Aktualisierung automatisch als neue Entität hinzugefügt; ein manuelles Neuladen soll dafür nicht nötig sein.
+- Die Entity-Unique-ID basiert auf der SwitchBot-Geräte-ID, damit die Entität unabhängig von der Zahl der vorhandenen Konfigurationseinträge eindeutig bleibt.
+- Der Geräte-Status wird pro Gerät abgefragt. Ein Statusfehler eines einzelnen Geräts soll die übrigen Geräte nicht blockieren.
+
+**Wichtiger Hinweis zu bestehenden Installationen:** Bisherige Konfigurationseinträge mit gespeicherter Geräte-ID werden weiterhin gelesen. Die neue Laufzeitlogik entdeckt alle unterstützten Geräte mit den darin gespeicherten Zugangsdaten. Wenn mehrere alte Einträge für dasselbe SwitchBot-Konto vorhanden sind, können mehrere Coordinator dieselben API-Abfragen ausführen; Home Assistant sollte doppelte Entitäten anhand der eindeutigen Geräte-ID verhindern. Eine saubere Zusammenführung alter Einträge wurde nicht implementiert. Vor dem produktiven Einsatz mit mehreren alten Einträgen bitte die Geräte- und Entitätsliste kontrollieren.
+
+## 3. Bisherige Erkenntnisse und Tests
 
 Der SwitchBot-API-Status wurde mit dem Gerät „Test“ manuell geprüft. Die gemeldeten Werte entsprachen den tatsächlichen Rollladenpositionen:
 
@@ -27,9 +38,19 @@ Weitere beobachtete Statuswerte:
 - `isStuck: false`
 - Bei den protokollierten Messungen waren `switch1Status` und `switch2Status` nicht allein ausreichend, um die Rollladenposition zu bestimmen. Maßgeblich ist das Feld `position`.
 
-**Praxistest durch den Nutzer:** Öffnen, Schließen und Übertragung der aktuellen Position funktionieren in der installierten Integration. Die Stopp-Funktion wurde getestet und funktioniert mit `turnOff` nicht. Der zweite Versuch mit erneutem `setPosition` auf die zuletzt gemeldete Position reagiert nur zeitverzögert und ist nicht optimal. Die App bezeichnet die Funktion als „Pause“. Daher sendet die Integration jetzt den eigenen API-Befehl `pause` ohne Positionsabfrage. Dieser Ansatz ist noch nicht am Gerät getestet.
+**Praxistest durch den Nutzer:** Öffnen, Schließen und Übertragung der aktuellen Position funktionieren. Die Stopp-Funktion wurde getestet und funktioniert mit `turnOff` nicht. Erneutes Senden der zuletzt gemeldeten Position pausierte nur verzögert. Daher sendet die Integration nun den nativen API-Befehl `pause`; dieser Ansatz ist am Gerät noch nicht bestätigt.
 
-## 3. Positionsumrechnung
+## 4. Geänderte Dateien
+
+- `config_flow.py` – kontobasierte Einrichtung; Auswahl eines einzelnen Geräts entfällt.
+- `coordinator.py` – regelmäßige Erkennung aller unterstützten Geräte und Statusabfrage je Gerät.
+- `cover.py` – dynamisches Hinzufügen neu erkannter Cover-Entitäten; Befehle werden an die jeweilige Geräte-ID gesendet.
+- `__init__.py` – kontobasierter Coordinator wird in `entry.runtime_data` abgelegt.
+- `const.py` – Home-Assistant-Plattform-Konstante.
+- `strings.json` und `translations/en.json` – Einrichtungstexte für mehrere Geräte.
+- `README.md` – automatische Geräteerkennung dokumentiert.
+
+## 5. Positionsumrechnung
 
 SwitchBot und Home Assistant verwenden entgegengesetzte Prozentwerte:
 
@@ -43,88 +64,43 @@ home_assistant_position = 100 - switchbot_position
 switchbot_target_position = 100 - home_assistant_target_position
 ```
 
-Beispiele:
-- Home Assistant „Öffnen“ → SwitchBot Zielposition `0`
-- Home Assistant „Schließen“ → SwitchBot Zielposition `100`
-- Home Assistant Zielposition `50 %` → SwitchBot Zielposition `50`
-
-## 4. Repository und bisher angelegte Dateien
-
-Im Repository wurde auf dem Branch `main` ein erstes Integrationsgerüst angelegt:
-
-- `README.md` – Projektbeschreibung und Installationshinweise
-- `hacs.json` – HACS-Metadaten
-- `custom_components/switchbot_relay_cover/manifest.json` – Integrationsmanifest
-- `custom_components/switchbot_relay_cover/const.py` – Konstanten
-- `custom_components/switchbot_relay_cover/api.py` – signierte SwitchBot-API-Anfragen
-- `custom_components/switchbot_relay_cover/coordinator.py` – Statusabfrage und Aktualisierung
-- `custom_components/switchbot_relay_cover/config_flow.py` – Einrichtung und Geräteauswahl
-- `custom_components/switchbot_relay_cover/__init__.py` – Setup und Entladen
-- `custom_components/switchbot_relay_cover/cover.py` – Cover-Entität mit Öffnen, Schließen und Positionierung
-- `custom_components/switchbot_relay_cover/strings.json` – Konfigurationstexte
-- `custom_components/switchbot_relay_cover/translations/en.json` – englische Übersetzungen
-
-Die Geräteauswahl ist aktuell auf den Typ „Relay Switch 2PM“ eingeschränkt.
-
-## 5. Geplante Funktionen
-
-- Einrichtung über **Einstellungen → Geräte & Dienste → Integration hinzufügen**
-- Token und Secret als Konfigurationseintrag speichern
-- Passendes Relay Switch 2PM aus der SwitchBot-Geräteliste auswählen
-- Native Home-Assistant-Cover-Entität bereitstellen — umgesetzt
-- Öffnen und Schließen — vom Nutzer erfolgreich getestet
-- Zielposition in Prozent einstellen — implementiert; separater Praxistest nicht bestätigt
-- Istposition aus dem API-Status auslesen — vom Nutzer erfolgreich getestet
-- Status regelmäßig aktualisieren
-- HACS-Installation über ein öffentliches GitHub-Repository ermöglichen
-
 ## 6. Offene Aufgaben
 
-### Priorität 1 – Code prüfen und korrigieren
+### Priorität 1 – Codequalität und Kompatibilität
+- [ ] Python-Syntax und Imports in allen geänderten Dateien prüfen.
+- [ ] Gegen die installierte Home-Assistant-Core-Version prüfen.
+- [ ] Mehrgeräte-Abfrage, Coordinator-Verhalten und dynamisches Hinzufügen in HA testen.
+- [ ] Fehlerfall testen, wenn ein einzelnes Gerät offline ist.
+- [ ] Verhalten bei leerer Geräteliste und API-Ausfällen kontrollieren.
+- [ ] Bestehende Installationen mit einer und mit mehreren alten Konfigurationseinträgen prüfen.
 
-- [ ] Alle Python-Dateien auf Syntaxfehler prüfen.
-- [ ] Gegen die aktuell unterstützte Home-Assistant-Core-Version prüfen.
-- [ ] Config-Flow- und Übersetzungsdateien auf Kompatibilität prüfen.
-- [ ] Prüfen, ob SwitchBot den Relay Switch 2PM in der Geräteliste exakt mit dem erwarteten Gerätetyp meldet.
-- [ ] API-Antworten und Fehlerfälle robust behandeln.
-- [ ] Sicherstellen, dass Positionswerte als Ganzzahlen verarbeitet und ungültige oder fehlende Werte sicher behandelt werden.
+### Priorität 2 – Praxistests
+- [x] Öffnen und Schließen – vom Nutzer erfolgreich getestet.
+- [x] Positionsrückmeldung – vom Nutzer erfolgreich getestet.
+- [ ] Mehr als ein Relay Switch 2PM wird beim Setup als eigene Cover-Entität angezeigt.
+- [ ] Ein nach dem Setup hinzugefügtes Gerät erscheint automatisch spätestens nach einer erfolgreichen Aktualisierung.
+- [ ] Native Stoppfunktion mit `pause` am Gerät testen.
+- [ ] Zwischenpositionen und Rückmeldung nach Befehlen erneut prüfen.
+- [ ] Netzwerkunterbrechung und Wiederherstellung testen.
 
-### Priorität 2 – In Home Assistant testen
-
-- [ ] Integration lokal installieren und Home Assistant neu starten.
-- [ ] Einrichtung mit gültigem API-Token und Secret durchführen.
-- [ ] Gerät wird bei der Einrichtung gefunden und ausgewählt.
-- [ ] Gemeldete Position stimmt mit der manuellen API-Abfrage überein.
-- [x] Öffnen und Schließen testen — laut Nutzer erfolgreich.
-- [ ] Zwischenpositionen separat testen und die Rückmeldung nach dem Befehl prüfen.
-- [ ] Neuen Stopp-Ansatz testen: nativen SwitchBot-API-Befehl `pause` senden.
-- [ ] Prüfen, ob der Rollladen bei Öffnungs- und Schließbewegung direkt anhält und ob die Positionsanzeige korrekt bleibt.
-- [ ] Falls erfolglos: API-Antwort und Geräteverhalten untersuchen; funktionierende Öffnen-/Schließen-Logik unverändert lassen.
-- [ ] Verhalten bei Netzwerkunterbrechung, API-Fehlern und offline geschaltetem Gerät prüfen.
-- [ ] Sicherstellen, dass nach einem Neustart keine erneute Einrichtung erforderlich ist.
-
-### Priorität 3 – HACS-Veröffentlichung vorbereiten
-
-- [ ] README und Installationsanleitung nach erfolgreichem Praxistest aktualisieren.
-- [ ] Versionsnummer und Changelog pflegen.
-- [ ] Passendes Git-Tag und Release erstellen.
-- [ ] HACS-Validierung und Repository-Anforderungen prüfen.
-- [ ] Erst nach erfolgreichem Test für den normalen Betrieb empfehlen.
+### Priorität 3 – Veröffentlichung
+- [ ] README und Changelog nach Praxistests vervollständigen.
+- [ ] Versionsnummer, Tag und Release manuell durch den Nutzer pflegen.
+- [ ] HACS-Validierung prüfen.
 
 ## 7. Sicherheit
 
-- API-Token und API-Secret dürfen niemals in Git-Dateien, Screenshots, Logs oder öffentlichen Issues veröffentlicht werden.
-- Zugangsdaten ausschließlich lokal im Home-Assistant-Konfigurationsdialog eingeben.
-- Da Zugangsdaten zuvor im Chat geteilt wurden, sollten sie in der SwitchBot-App erneuert beziehungsweise widerrufen und neu erstellt werden, bevor die Integration produktiv verwendet wird.
-- Die Steuerung erfolgt über die SwitchBot Cloud API und ist von Internet- und Cloud-Verfügbarkeit abhängig.
-- Die Integration ist kein Sicherheits- oder Schutzsystem. Vor der Nutzung müssen Endlagen, Kalibrierung und das Verhalten des Rollladens vor Ort geprüft werden.
+- API-Token und API-Secret nicht in Git-Dateien, Screenshots, Logs oder öffentlichen Issues veröffentlichen.
+- Da Zugangsdaten zuvor im Chat geteilt wurden, sollten sie erneuert beziehungsweise widerrufen und neu erstellt werden, bevor die Integration produktiv verwendet wird.
+- Die Steuerung läuft über die SwitchBot Cloud API und hängt von Internet- und Cloud-Verfügbarkeit ab.
+- Die Integration ist kein Sicherheits- oder Schutzsystem. Endlagen, Kalibrierung und Rollladenverhalten müssen vor Ort geprüft werden.
 
 ## 8. Aktueller Gesamtstatus
 
-**Grundgerüst:** angelegt  
-**Manuelle API-Statusprüfung:** erfolgreich  
-**Positionsumrechnung:** anhand der gemessenen Werte festgelegt  
-**Integration in Home Assistant getestet:** nein  
-**HACS-Veröffentlichung:** noch nicht bereit
+**Einzelgeräte-Steuerung:** Öffnen, Schließen und Positionsrückmeldung durch Nutzer bestätigt  
+**Mehrgeräte-Erkennung:** implementiert, noch nicht praktisch getestet  
+**Automatische Ergänzung neuer Geräte:** implementiert, noch nicht praktisch getestet  
+**Native Pause/Stopp-Funktion:** implementiert, Praxistest offen  
+**HACS-Veröffentlichung:** noch nicht als getestete Version freigegeben
 
-**Nächster Schritt:** Zuerst das angelegte Python-Gerüst prüfen und nötige Korrekturen durchführen. Anschließend die Integration in Home Assistant installieren und mit dem Relay Switch 2PM testen.
+**Nächster Schritt:** Änderungen in Home Assistant installieren bzw. Integration neu laden und prüfen, ob alle vorhandenen Relay Switch 2PM als eigene Cover-Entitäten erscheinen. Anschließend ein weiteres Gerät im SwitchBot-Konto hinzufügen und kontrollieren, ob es innerhalb des Aktualisierungsintervalls automatisch auftaucht.
