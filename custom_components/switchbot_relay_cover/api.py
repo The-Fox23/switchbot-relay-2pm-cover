@@ -90,6 +90,20 @@ class SwitchBotApi:
             raise HomeAssistantError("SwitchBot API returned an invalid device status")
         return body
 
+    async def turn_off(self, device_id: str, channel: int) -> None:
+        """Turn off one relay channel."""
+        if channel not in (1, 2):
+            raise ValueError("SwitchBot relay channel must be 1 or 2")
+        await self.request(
+            "POST",
+            f"/devices/{device_id}/commands",
+            {
+                "command": "turnOff",
+                "parameter": str(channel),
+                "commandType": "command",
+            },
+        )
+
     async def set_position(self, device_id: str, position: int) -> None:
         """Set the device position using the SwitchBot 0=open, 100=closed scale."""
         await self.request(
