@@ -1,0 +1,9 @@
+{
+  "domain": "switchbot_relay_cover",
+  "name": "SwitchBot Relay 2PM Cover",
+  "codeowners": ["@The-Fox23"],
+  "config_flow": true,
+  "documentation": "https://github.com/The-Fox23/switchbot-relay-2pm-cover",
+  "iot_class": "cloud_polling",
+  "version": "0.1.0"
+}
