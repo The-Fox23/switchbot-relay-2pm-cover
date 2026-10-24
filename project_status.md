@@ -2,82 +2,63 @@
 
 **Stand:** 24.10.2026  
 **Repository:** https://github.com/The-Fox23/switchbot-relay-2pm-cover  
-**Status:** Mehrgeräte-Erkennung und Messwertsensoren im Code ergänzt; Tests in Home Assistant stehen aus.
+**Status:** Mehrgeräte-Erkennung und aggregierte Messwertsensoren im Code ergänzt; Tests in Home Assistant stehen aus.
 
 ## 1. Projektziel
 
-Eine eigene Home-Assistant-Integration für den **SwitchBot Relay Switch 2PM**, die Geräte als native Cover-Entitäten für Rollläden bereitstellt und elektrische Messwerte über die SwitchBot Cloud API ausliest.
+Eine eigene Home-Assistant-Integration für den SwitchBot Relay Switch 2PM als native Cover-Entität mit Positionssteuerung und elektrischen Messwerten.
 
-## 2. Automatische Geräteerkennung
+## 2. Cover-Symbol
 
-- Beim Einrichten werden alle unterstützten Relay Switch 2PM im SwitchBot-Konto gesucht.
-- Jedes gefundene Gerät erhält eine eigene Cover-Entität und Messwertsensoren.
-- Geräteliste und Statusdaten werden alle 30 Sekunden aktualisiert.
-- Neu hinzugefügte Geräte sollen nach einer erfolgreichen Aktualisierung automatisch als Entitäten erscheinen.
-- Ein Statusfehler eines einzelnen Geräts soll die übrigen Geräte nicht blockieren.
+Die Cover-Entität verwendet jetzt das Icon `mdi:window-shutter`, passend zur Rollladen-/Cover-Funktion.
 
-**Hinweis zu bestehenden Installationen:** Alte Konfigurationseinträge mit gespeicherter Geräte-ID werden weiterhin mit den vorhandenen Zugangsdaten geladen. Wenn mehrere alte Einträge für dasselbe Konto existieren, können mehrere Coordinator dieselben API-Abfragen ausführen. Eine automatische Zusammenführung alter Einträge wurde nicht implementiert.
+## 3. Messwertsensoren
 
-## 3. Elektrische Messwertsensoren – neu
+Pro Gerät gibt es vier Sensoren, ohne getrennte Namen für Switch 1 und Switch 2:
 
-Für jeden Relay Switch 2PM werden pro Kanal (Switch 1 und Switch 2) drei Sensoren angelegt:
-
-| Messwert | API-Feld | Home Assistant Einheit |
+| Sensor | Berechnung | Einheit |
 |---|---|---|
-| Spannung | `switch1Voltage` / `switch2Voltage` | V |
-| Leistung | `switch1Power` / `switch2Power` | W |
-| Stromstärke | `switch1ElectricCurrent` / `switch2ElectricCurrent` | A |
+| Voltage | Spannung Kanal 1, ersatzweise Kanal 2 | V |
+| Current | Summe der Ströme beider Kanäle | A |
+| Power | Summe der Leistungen beider Kanäle | W |
+| Daily energy | Summe des täglichen Verbrauchs beider Kanäle | kWh |
 
-Die API liefert die Stromstärke in Milliampere; die Integration rechnet sie für die Home-Assistant-Einheit Ampere um. Wenn ein Feld in der API-Antwort fehlt, bleibt der jeweilige Sensorwert leer (`None`) statt einen Messwert zu erfinden.
+Die API-Felder für Energie sind `switch1UsedElectricity` und `switch2UsedElectricity`; laut SwitchBot-API werden sie in Watt-Minuten angegeben. Die Umrechnung lautet `kWh = (Watt-Minuten Kanal 1 + Watt-Minuten Kanal 2) / 60000`. Das ist der **Tagesverbrauch**, kein lebenslanger Gesamtzähler. <https://github.com/OpenWonderLabs/SwitchBotAPI/blob/main/devices/plugs-switches/relay-switch-2pm.md>
 
-Die Messwerte werden gemeinsam mit dem Geräte-Status im bestehenden 30-Sekunden-Intervall abgefragt. Es wird kein zusätzlicher API-Aufruf je Sensor ausgelöst.
+Die Stromstärke wird aus mA in A umgerechnet. Spannung wird nicht addiert, weil beide Kanäle dieselbe Netzversorgung nutzen; Kanal 1 wird bevorzugt.
 
-**Noch nicht praktisch verifiziert:** Ob die API für das konkrete Gerät und die installierte Firmware alle sechs Felder tatsächlich mit Werten liefert. Fehlende Felder können zu leeren Sensorwerten führen.
+## 4. Geräteerkennung und Aktualisierung
 
-## 4. Bisherige Erkenntnisse und Tests
+- Alle unterstützten Relay Switch 2PM des Kontos werden automatisch gesucht.
+- Neue Geräte sollen beim nächsten erfolgreichen Polling automatisch hinzugefügt werden.
+- Cover und Messwertsensoren verwenden dieselbe Statusabfrage alle 30 Sekunden.
+- Mehrere alte Konfigurationseinträge für dasselbe Konto können weiterhin doppelte API-Abfragen verursachen.
+
+## 5. Bisherige Tests
 
 Vom Nutzer bestätigt:
 - Öffnen und Schließen funktionieren.
-- Die Positionsrückmeldung funktioniert.
-- Gemeldete API-Positionen 0, 28, 54 und 100 passten zu den beobachteten Rollladenpositionen.
+- Positionsrückmeldung funktioniert.
 
-Weitere zuvor beobachtete Werte: `online: true`, `calibrate: true`, `isStuck: false`.
+Noch nicht praktisch bestätigt:
+- automatische Erkennung mehrerer Geräte,
+- aggregierte Spannung, Stromstärke und Leistung,
+- Tagesenergie aus den API-Feldern,
+- native `pause`-Stoppfunktion.
 
-Die native API-Stoppfunktion `pause` ist implementiert, aber noch nicht praktisch bestätigt.
-
-## 5. Positionsumrechnung
-
-- SwitchBot: `0 = offen`, `100 = geschlossen`
-- Home Assistant Cover: `100 = offen`, `0 = geschlossen`
-
-```text
-home_assistant_position = 100 - switchbot_position
-switchbot_target_position = 100 - home_assistant_target_position
-```
-
-## 6. Geänderte Dateien
-
-- `sensor.py` – sechs Messwertsensoren pro Gerät (Spannung, Leistung und Stromstärke auf beiden Kanälen).
-- `const.py` – aktiviert Cover- und Sensor-Plattform.
-- `README.md` – dokumentiert Messwerte und Einheiten.
-- `project_status.md` – Status und ausstehende Tests aktualisiert.
-
-## 7. Offene Aufgaben
+## 6. Offene Aufgaben
 
 - [ ] Python-Syntax und Imports prüfen.
 - [ ] Gegen die installierte Home-Assistant-Core-Version prüfen.
-- [ ] Prüfen, ob beide Kanäle Spannung, Stromstärke und Leistung liefern.
-- [ ] Werte mit einer unabhängigen Anzeige/Messung vergleichen.
+- [ ] Prüfen, ob die API für beide Kanäle die Messwert- und Energie-Felder liefert.
+- [ ] Summen und Energieumrechnung mit SwitchBot-App-Werten vergleichen.
+- [ ] Prüfen, wie sich der tägliche Energiezähler beim Tageswechsel verhält.
 - [ ] Mehrgeräte-Erkennung und dynamisches Hinzufügen testen.
-- [ ] Offline-Verhalten und API-Ausfälle testen.
 - [ ] Native `pause`-Stoppfunktion testen.
 - [ ] HACS-Validierung prüfen.
 
-## 8. Sicherheit und Veröffentlichung
+## 7. Sicherheit und Veröffentlichung
 
-- API-Token und API-Secret niemals in Git-Dateien, Screenshots, Logs oder öffentlichen Issues veröffentlichen.
-- Die Steuerung läuft über die SwitchBot Cloud API und hängt von Internet- und Cloud-Verfügbarkeit ab.
-- Die Integration ist kein Sicherheits- oder Schutzsystem.
-- Versionsnummer, Release-Tag und Veröffentlichung pflegt der Nutzer manuell.
+API-Token und API-Secret nicht in Git-Dateien, Screenshots, Logs oder öffentlichen Issues veröffentlichen. Die Integration hängt von der SwitchBot Cloud API ab und ist kein Sicherheits- oder Schutzsystem. Versionsnummer und Release-Tag pflegt der Nutzer manuell.
 
-**Nächster Schritt:** Code installieren und prüfen, ob unter jedem Relay-Gerät sechs Sensoren erscheinen und sinnvolle Werte aktualisiert werden.
+**Nächster Schritt:** Nach Installation prüfen, ob pro Gerät genau vier Sensoren erscheinen und ob die Tagesenergie zur SwitchBot-App passt.
