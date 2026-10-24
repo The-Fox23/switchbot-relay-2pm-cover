@@ -8,10 +8,10 @@ from homeassistant.exceptions import ConfigEntryNotReady
 from homeassistant.helpers.aiohttp_client import async_get_clientsession
 
 from .api import SwitchBotApi
-from .const import CONF_DEVICE_ID, CONF_DEVICE_NAME, CONF_SECRET, CONF_TOKEN, DOMAIN, PLATFORM
+from .const import CONF_SECRET, CONF_TOKEN, DOMAIN, PLATFORMS
 from .coordinator import SwitchBotCoordinator
 
-PLATFORMS = ["cover"]
+type SwitchBotConfigEntry = ConfigEntry[SwitchBotCoordinator]
 
 
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
@@ -19,31 +19,24 @@ async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     return True
 
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Set up a config entry."""
+async def async_setup_entry(hass: HomeAssistant, entry: SwitchBotConfigEntry) -> bool:
+    """Set up a config entry and discover all supported account devices."""
     api = SwitchBotApi(
         async_get_clientsession(hass),
         entry.data[CONF_TOKEN],
         entry.data[CONF_SECRET],
     )
-    coordinator = SwitchBotCoordinator(
-        hass,
-        api,
-        entry.data[CONF_DEVICE_ID],
-        entry.data[CONF_DEVICE_NAME],
-    )
+    coordinator = SwitchBotCoordinator(hass, api)
     try:
         await coordinator.async_config_entry_first_refresh()
     except Exception as err:
         raise ConfigEntryNotReady from err
 
-    hass.data.setdefault(DOMAIN, {})[entry.entry_id] = coordinator
+    entry.runtime_data = coordinator
     await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
     return True
 
 
-async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Unload a config entry."""
-    if unload_ok := await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
-        hass.data[DOMAIN].pop(entry.entry_id)
-    return unload_ok
+async def async_unload_entry(hass: HomeAssistant, entry: SwitchBotConfigEntry) -> bool:
+    """Unload the integration."""
+    return await hass.config_entries.async_unload_platforms(entry, PLATFORMS)
