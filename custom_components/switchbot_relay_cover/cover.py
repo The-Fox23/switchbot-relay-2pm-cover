@@ -33,6 +33,7 @@ class SwitchBotRelayCover(CoordinatorEntity[SwitchBotCoordinator], CoverEntity):
         CoverEntityFeature.OPEN
         | CoverEntityFeature.CLOSE
         | CoverEntityFeature.SET_POSITION
+        | CoverEntityFeature.STOP
     )
 
     def __init__(self, coordinator: SwitchBotCoordinator, entry: ConfigEntry) -> None:
@@ -74,6 +75,20 @@ class SwitchBotRelayCover(CoordinatorEntity[SwitchBotCoordinator], CoverEntity):
     async def async_close_cover(self, **kwargs: Any) -> None:
         """Close the cover fully."""
         await self.coordinator.api.set_position(self.coordinator.device_id, 100)
+        await self.coordinator.async_request_refresh()
+
+    async def async_stop_cover(self, **kwargs: Any) -> None:
+        """Stop the moving cover by turning off the active relay channel."""
+        status = self.coordinator.data or {}
+        switch1 = status.get("switch1Status")
+        switch2 = status.get("switch2Status")
+
+        # Stop only a relay channel that the API reports as active.
+        if switch1 in (1, "1", True):
+            await self.coordinator.api.turn_off(self.coordinator.device_id, 1)
+        elif switch2 in (1, "1", True):
+            await self.coordinator.api.turn_off(self.coordinator.device_id, 2)
+
         await self.coordinator.async_request_refresh()
 
     async def async_set_cover_position(self, **kwargs: Any) -> None:
