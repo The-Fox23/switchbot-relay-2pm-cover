@@ -2,7 +2,7 @@
 
 **Stand:** 24.10.2026  
 **Repository:** https://github.com/The-Fox23/switchbot-relay-2pm-cover  
-**Status:** Öffnen, Schließen und Positionsrückmeldung praktisch bestätigt; neuer Stopp-Ansatz wartet auf Praxistest
+**Status:** Öffnen, Schließen und Positionsrückmeldung praktisch bestätigt; native `pause`-Stoppfunktion wartet auf Praxistest
 
 ## 1. Projektziel
 
@@ -27,7 +27,7 @@ Weitere beobachtete Statuswerte:
 - `isStuck: false`
 - Bei den protokollierten Messungen waren `switch1Status` und `switch2Status` nicht allein ausreichend, um die Rollladenposition zu bestimmen. Maßgeblich ist das Feld `position`.
 
-**Praxistest durch den Nutzer:** Öffnen, Schließen und Übertragung der aktuellen Position funktionieren in der installierten Integration. Die Stopp-Funktion wurde getestet und funktioniert mit `turnOff` nicht. Neuer Versuch: Beim Stoppen wird die zuletzt von der API gemeldete SwitchBot-Position erneut als Zielposition an `setPosition` übergeben. Dieser Ansatz ist noch nicht am Gerät getestet.
+**Praxistest durch den Nutzer:** Öffnen, Schließen und Übertragung der aktuellen Position funktionieren in der installierten Integration. Die Stopp-Funktion wurde getestet und funktioniert mit `turnOff` nicht. Der zweite Versuch mit erneutem `setPosition` auf die zuletzt gemeldete Position reagiert nur zeitverzögert und ist nicht optimal. Die App bezeichnet die Funktion als „Pause“. Daher sendet die Integration jetzt den eigenen API-Befehl `pause` ohne Positionsabfrage. Dieser Ansatz ist noch nicht am Gerät getestet.
 
 ## 3. Positionsumrechnung
 
@@ -97,9 +97,9 @@ Die Geräteauswahl ist aktuell auf den Typ „Relay Switch 2PM“ eingeschränkt
 - [ ] Gemeldete Position stimmt mit der manuellen API-Abfrage überein.
 - [x] Öffnen und Schließen testen — laut Nutzer erfolgreich.
 - [ ] Zwischenpositionen separat testen und die Rückmeldung nach dem Befehl prüfen.
-- [ ] Neuen Stopp-Ansatz testen: aktuelle API-Position erneut an `setPosition` senden.
-- [ ] Prüfen, ob der Rollladen bei Öffnungs- und Schließbewegung anhält und ob die Positionsanzeige korrekt bleibt.
-- [ ] Falls erfolglos: SwitchBot-API-Verhalten weiter untersuchen; keine weiteren unbestätigten Relaisbefehle einbauen.
+- [ ] Neuen Stopp-Ansatz testen: nativen SwitchBot-API-Befehl `pause` senden.
+- [ ] Prüfen, ob der Rollladen bei Öffnungs- und Schließbewegung direkt anhält und ob die Positionsanzeige korrekt bleibt.
+- [ ] Falls erfolglos: API-Antwort und Geräteverhalten untersuchen; funktionierende Öffnen-/Schließen-Logik unverändert lassen.
 - [ ] Verhalten bei Netzwerkunterbrechung, API-Fehlern und offline geschaltetem Gerät prüfen.
 - [ ] Sicherstellen, dass nach einem Neustart keine erneute Einrichtung erforderlich ist.
 
