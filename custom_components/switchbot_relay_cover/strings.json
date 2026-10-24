@@ -3,27 +3,18 @@
     "step": {
       "user": {
         "title": "Connect to SwitchBot",
-        "description": "Enter the API token and secret from the SwitchBot app.",
+        "description": "Enter the API token and secret from the SwitchBot app. All supported Relay Switch 2PM devices in this account will be added automatically.",
         "data": {
           "token": "API token",
           "secret": "API secret"
-        }
-      },
-      "device": {
-        "title": "Select a device",
-        "description": "Choose the SwitchBot Relay device to use as a cover.",
-        "data": {
-          "device_id": "Device"
         }
       }
     },
     "error": {
       "cannot_connect": "Could not connect to SwitchBot. Check the token, secret, and internet connection.",
-      "no_supported_devices": "No supported Relay Switch device was found.",
+      "no_supported_devices": "No supported Relay Switch 2PM device was found.",
       "unknown": "An unexpected error occurred."
     },
-    "abort": {
-      "device_not_found": "The selected device could not be found."
-    }
+    "abort": {}
   }
 }
