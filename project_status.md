@@ -2,7 +2,7 @@
 
 **Stand:** 24.10.2026  
 **Repository:** https://github.com/The-Fox23/switchbot-relay-2pm-cover  
-**Status:** Mehrgeräte-Erkennung und aggregierte Messwertsensoren im Code ergänzt; Tests in Home Assistant stehen aus.
+**Status:** Cover-Bedienung angepasst; beide Richtungs-Tasten bleiben aktiv. Stopp nutzt jetzt `setPosition` mit der aktuell gemeldeten Position, da die dokumentierte Relay-2PM-API keinen `pause`-Befehl aufführt. Praxistest steht aus.
 
 ## 1. Projektziel
 
@@ -10,7 +10,7 @@ Eine eigene Home-Assistant-Integration für den SwitchBot Relay Switch 2PM als n
 
 ## 2. Cover-Symbol
 
-Die Cover-Entität verwendet jetzt das Icon `mdi:window-shutter`, passend zur Rollladen-/Cover-Funktion.
+Die Cover-Entität verwendet das Icon `mdi:window-shutter`, passend zur Rollladen-/Cover-Funktion. `assumed_state` ist aktiviert, damit Home Assistant Öffnen und Schließen nicht anhand der gemeldeten Position deaktiviert.
 
 ## 3. Messwertsensoren
 
@@ -41,6 +41,8 @@ Vom Nutzer bestätigt:
 - Positionsrückmeldung funktioniert.
 
 Noch nicht praktisch bestätigt:
+- Stopp durch erneutes Anfahren der aktuell gemeldeten Position (die SwitchBot-API-Dokumentation listet keinen separaten `pause`-Befehl),
+- beide Richtungs-Tasten bleiben in der Home-Assistant-Oberfläche aktiv,
 - automatische Erkennung mehrerer Geräte,
 - aggregierte Spannung, Stromstärke und Leistung,
 - Tagesenergie aus den API-Feldern,
@@ -54,11 +56,11 @@ Noch nicht praktisch bestätigt:
 - [ ] Summen und Energieumrechnung mit SwitchBot-App-Werten vergleichen.
 - [ ] Prüfen, wie sich der tägliche Energiezähler beim Tageswechsel verhält.
 - [ ] Mehrgeräte-Erkennung und dynamisches Hinzufügen testen.
-- [ ] Native `pause`-Stoppfunktion testen.
+- [ ] Stoppfunktion über `setPosition` auf die aktuelle Position testen; prüfen, ob der Motor zuverlässig anhält.
 - [ ] HACS-Validierung prüfen.
 
 ## 7. Sicherheit und Veröffentlichung
 
 API-Token und API-Secret nicht in Git-Dateien, Screenshots, Logs oder öffentlichen Issues veröffentlichen. Die Integration hängt von der SwitchBot Cloud API ab und ist kein Sicherheits- oder Schutzsystem. Versionsnummer und Release-Tag pflegt der Nutzer manuell.
 
-**Nächster Schritt:** Nach Installation prüfen, ob pro Gerät genau vier Sensoren erscheinen und ob die Tagesenergie zur SwitchBot-App passt.
+**Nächster Schritt:** Nach Installation beide Richtungs-Tasten auch nach vollständigem Öffnen/Schließen prüfen und testen, ob Stop die Bewegung anhält. Zusätzlich prüfen, ob pro Gerät genau vier Sensoren erscheinen und ob die Tagesenergie zur SwitchBot-App passt.
