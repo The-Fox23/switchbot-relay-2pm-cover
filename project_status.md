@@ -2,7 +2,7 @@
 
 **Stand:** 24.10.2026  
 **Repository:** https://github.com/The-Fox23/switchbot-relay-2pm-cover  
-**Status:** Grundgerüst angelegt – Implementierung und Praxistest stehen noch aus
+**Status:** Öffnen, Schließen und Positionsrückmeldung praktisch bestätigt; Stopp-Funktion fehlerhaft und in Untersuchung
 
 ## 1. Projektziel
 
@@ -27,7 +27,7 @@ Weitere beobachtete Statuswerte:
 - `isStuck: false`
 - Bei den protokollierten Messungen waren `switch1Status` und `switch2Status` nicht allein ausreichend, um die Rollladenposition zu bestimmen. Maßgeblich ist das Feld `position`.
 
-**Wichtig:** Die manuelle Statusabfrage wurde erfolgreich getestet. Die in diesem Repository angelegte Integration selbst wurde noch nicht in Home Assistant installiert und end-to-end geprüft.
+**Praxistest durch den Nutzer:** Öffnen, Schließen und Übertragung der aktuellen Position funktionieren in der installierten Integration. Die Stopp-Funktion wurde getestet und funktioniert derzeit nicht. Der bisherige `turnOff`-Ansatz ist nicht bestätigt und muss überarbeitet werden.
 
 ## 3. Positionsumrechnung
 
@@ -71,10 +71,10 @@ Die Geräteauswahl ist aktuell auf den Typ „Relay Switch 2PM“ eingeschränkt
 - Einrichtung über **Einstellungen → Geräte & Dienste → Integration hinzufügen**
 - Token und Secret als Konfigurationseintrag speichern
 - Passendes Relay Switch 2PM aus der SwitchBot-Geräteliste auswählen
-- Native Home-Assistant-Cover-Entität bereitstellen
-- Öffnen und Schließen
-- Zielposition in Prozent einstellen
-- Istposition aus dem API-Status auslesen
+- Native Home-Assistant-Cover-Entität bereitstellen — umgesetzt
+- Öffnen und Schließen — vom Nutzer erfolgreich getestet
+- Zielposition in Prozent einstellen — implementiert; separater Praxistest nicht bestätigt
+- Istposition aus dem API-Status auslesen — vom Nutzer erfolgreich getestet
 - Status regelmäßig aktualisieren
 - HACS-Installation über ein öffentliches GitHub-Repository ermöglichen
 
@@ -95,8 +95,9 @@ Die Geräteauswahl ist aktuell auf den Typ „Relay Switch 2PM“ eingeschränkt
 - [ ] Einrichtung mit gültigem API-Token und Secret durchführen.
 - [ ] Gerät wird bei der Einrichtung gefunden und ausgewählt.
 - [ ] Gemeldete Position stimmt mit der manuellen API-Abfrage überein.
-- [ ] Öffnen und Schließen testen.
-- [ ] Zwischenpositionen testen und die Rückmeldung nach dem Befehl prüfen.
+- [x] Öffnen und Schließen testen — laut Nutzer erfolgreich.
+- [ ] Zwischenpositionen separat testen und die Rückmeldung nach dem Befehl prüfen.
+- [ ] Stopp-Funktion korrigieren und mit dem realen Gerät sicher testen.
 - [ ] Verhalten bei Netzwerkunterbrechung, API-Fehlern und offline geschaltetem Gerät prüfen.
 - [ ] Sicherstellen, dass nach einem Neustart keine erneute Einrichtung erforderlich ist.
 
