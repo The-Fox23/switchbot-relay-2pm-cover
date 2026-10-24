@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Any
 
 from homeassistant.core import HomeAssistant
@@ -9,6 +10,8 @@ from homeassistant.helpers.update_coordinator import DataUpdateCoordinator, Upda
 
 from .api import SwitchBotApi
 from .const import DOMAIN, SCAN_INTERVAL
+
+_LOGGER = logging.getLogger(__name__)
 
 
 class SwitchBotCoordinator(DataUpdateCoordinator[dict[str, Any]]):
@@ -26,7 +29,7 @@ class SwitchBotCoordinator(DataUpdateCoordinator[dict[str, Any]]):
         self.device_name = device_name
         super().__init__(
             hass,
-            logger=__import__("logging").getLogger(__name__),
+            logger=_LOGGER,
             name=f"{DOMAIN}_{device_name}",
             update_interval=SCAN_INTERVAL,
         )
