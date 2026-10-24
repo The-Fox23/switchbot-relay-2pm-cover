@@ -11,4 +11,4 @@ CONF_DEVICE_NAME = "device_name"
 
 API_BASE_URL = "https://api.switch-bot.com/v1.1"
 SCAN_INTERVAL = timedelta(seconds=30)
-SUPPORTED_DEVICE_TYPES = ("relay switch 2pm", "relay switch")
+SUPPORTED_DEVICE_TYPES = ("relay switch 2pm",)
