@@ -2,8 +2,11 @@
 
 from datetime import timedelta
 
+from homeassistant.const import Platform
+
 DOMAIN = "switchbot_relay_cover"
-PLATFORM = "cover"
+PLATFORM = Platform.COVER
+PLATFORMS = [Platform.COVER]
 CONF_TOKEN = "token"
 CONF_SECRET = "secret"
 CONF_DEVICE_ID = "device_id"
