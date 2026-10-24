@@ -7,6 +7,7 @@ from typing import Any
 from homeassistant.components.cover import CoverEntity, CoverEntityFeature
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant, callback
+from homeassistant.exceptions import HomeAssistantError
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from homeassistant.helpers.update_coordinator import CoordinatorEntity
 
@@ -44,6 +45,8 @@ class SwitchBotRelayCover(CoordinatorEntity[SwitchBotCoordinator], CoverEntity):
     _attr_has_entity_name = True
     _attr_name = "Cover"
     _attr_icon = "mdi:window-shutter"
+    # Keep both open and close controls available regardless of reported position.
+    _attr_assumed_state = True
     _attr_supported_features = (
         CoverEntityFeature.OPEN
         | CoverEntityFeature.CLOSE
@@ -103,8 +106,30 @@ class SwitchBotRelayCover(CoordinatorEntity[SwitchBotCoordinator], CoverEntity):
         await self.coordinator.async_request_refresh()
 
     async def async_stop_cover(self, **kwargs: Any) -> None:
-        """Pause cover movement using the SwitchBot pause command."""
-        await self.coordinator.api.pause(self._device_id)
+        """Stop by commanding the currently reported position.
+
+        The Relay Switch 2PM API documents setPosition, but not a pause command.
+        """
+        device_status = (self.coordinator.data or {}).get(self._device_id, {})
+        switchbot_position = device_status.get("position")
+        if switchbot_position is None:
+            await self.coordinator.async_request_refresh()
+            device_status = (self.coordinator.data or {}).get(self._device_id, {})
+            switchbot_position = device_status.get("position")
+
+        if switchbot_position is None:
+            raise HomeAssistantError(
+                "Cannot stop the SwitchBot cover because its current position is unknown"
+            )
+
+        try:
+            position = max(0, min(100, int(switchbot_position)))
+        except (TypeError, ValueError) as err:
+            raise HomeAssistantError(
+                "Cannot stop the SwitchBot cover because its current position is invalid"
+            ) from err
+
+        await self.coordinator.api.set_position(self._device_id, position)
         await self.coordinator.async_request_refresh()
 
     async def async_set_cover_position(self, **kwargs: Any) -> None:
